@@ -1,0 +1,29 @@
+# backend/docker-compose.yml
+version: '3.8'
+
+services:
+  sqlserver_db:
+    image: mcr.microsoft.com/mssql/server:2022-latest # Use a versão mais recente ou desejada
+    container_name: meuapp-sqlserver
+    environment:
+      SA_PASSWORD: "YourStrong@Password" # IMPORTANTE: Use a mesma senha do .env
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433" # Mapeia a porta padrão do SQL Server
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  mysql_db:
+    image: mysql:8.0 # Ou a versão desejada
+    container_name: meuapp-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "yourmysqlpassword" # IMPORTANTE: Use a mesma senha do .env
+      MYSQL_DATABASE: "meuappdb_mysql" # Cria o banco de dados inicial
+    ports:
+      - "3306:3306" # Mapeia a porta padrão do MySQL
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  sqlserver_data:
+  mysql_data:

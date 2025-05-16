@@ -1,0 +1,88 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver" // Ou mysql
+  url      = env("DATABASE_URL_SQLSERVER") // Certifique-se que aponta para database=orderlink
+}
+
+model COMPANY {
+  COMPANY_ID           Int       @id @default(autoincrement())
+  TIPO_CADASTRO        Int
+  CPF_CNPJ             String
+  STATUS_ID            Int
+  NOME_EMPRESA         String
+  DATA_CRIACAO         DateTime  @default(now())
+  STATUS_FINANCEIRO_ID Int
+  DATA_VIGENCIA_PAGTO  DateTime?
+}
+
+model PERMISSION {
+  PERMISSION_ID     Int     @id @default(autoincrement())
+  USERS_ID          Int
+  STATUS_ID         Int
+  canCadastrarItem  Boolean @default(false)
+  canMinhaEmpresa   Boolean @default(false)
+  canGerenciarItens Boolean @default(false)
+}
+
+model USER {
+  users_id Int     @id @default(autoincrement())
+  email    String  @unique // <<< Email continua único
+  password String?
+  name     String
+
+  // --- Campos do Cadastro/Perfil ---
+  tipoEmpresa  String?
+  cnpj         String? // <<< SEM @unique
+  nomeFantasia String?
+  razaoSocial  String?
+  cpf          String? // <<< SEM @unique
+  cep          String?
+  endereco     String?
+  numero       String?
+  complemento  String?
+  imageBase64  String?
+
+  // --- NOVO CAMPO Status ---
+  status_id Int? // 1=Ativo, 2=Cancelado, 3=Bloqueado, 4=Inativo
+
+  // --- Permissões ---
+  canCadastrarItem  Boolean @default(false) // Voltando defaults para false
+  canMinhaEmpresa   Boolean @default(false)
+  canGerenciarItens Boolean @default(false)
+
+  // --- Timestamps ---
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- RELACIONAMENTO: ---
+  linkedAccounts LINKEDACCOUNT[]
+
+  // --- Campos para Reset de Senha ---
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
+  @@map("Users")
+}
+
+// --- NOVO MODELO: Para Contas Sociais Vinculadas ---
+model LINKEDACCOUNT {
+  id                Int    @id @default(autoincrement())
+  provider          String // Nome do provedor (ex: 'google', 'facebook', 'microsoft', 'apple')
+  providerAccountId String // O ID único do usuário DENTRO do provedor social
+
+  // --- Relacionamento: Esta conta pertence a um Usuário ---
+  userId Int
+  user   USER @relation(fields: [userId], references: [users_id], onDelete: Cascade) // Se deletar User, deleta os vínculos
+
+  createdAt DateTime @default(now())
+
+  // Garante que a combinação provedor + ID seja única em toda a tabela
+  @@unique([provider, providerAccountId])
+  // Mapeia para a tabela "LinkedAccounts" no banco
+  @@map("LinkedAccounts")
+}
